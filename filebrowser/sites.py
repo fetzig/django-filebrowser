@@ -21,6 +21,7 @@ from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage, FileSystemStorage
 from django.core.exceptions import ImproperlyConfigured
+from django.template.loader import render_to_string
 
 # FILEBROWSER IMPORTS
 from filebrowser.settings import *
@@ -138,6 +139,7 @@ class FileBrowserSite(object):
             url(r'^version/$', file_exists(self, path_exists(self, self.filebrowser_view(self.version))), name="fb_version"),
             # non-views
             url(r'^upload_file/$', csrf_exempt(self._upload_file), name="fb_do_upload"),
+            url(r'^get_list_item/$', csrf_exempt(self._get_list_item), name="fb_get_list_item"),
             
         )
 
@@ -520,6 +522,21 @@ class FileBrowserSite(object):
             # let Ajax Upload know whether we saved it or not
             ret_json = {'success': True, 'filename': filedata.name}
             return HttpResponse(json.dumps(ret_json))
+    
+    def _get_list_item(self, request):
+        query = request.GET
+        path = u'%s' % os.path.join(self.directory, query.get('dir', ''))
+        fileobject = FileObject(os.path.join(path, query.get('filename', '')), site=self)
+        
+        rendered = render_to_string('filebrowser/include/filelist_item.html', { 
+            'fileobject': fileobject,
+            'settings_var': get_settings_var(directory=self.directory),
+            'query': query,
+        })
+        
+        json_response = {"html": rendered}
+        return HttpResponse(json.dumps(json_response))
+
 
 # Default FileBrowser site
 site = FileBrowserSite(name='filebrowser')

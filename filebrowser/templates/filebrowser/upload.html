@@ -13,9 +13,15 @@
 <!-- JAVASCRIPTS -->
 {% block javascripts %}
     {{ block.super }}
+    {% ifequal query.pop '1' %} <!-- FileBrowseField -->
+      <script language="javascript" type="text/javascript" src="{{ settings_var.URL_FILEBROWSER_MEDIA }}js/FB_FileBrowseField.js"></script>
+      {% include "filebrowser/include/init_version_pulldown.html" %}
+    {% endifequal %}
     <script type="text/javascript" src="../../jsi18n/"></script>
     <script type="text/javascript" src="{{ settings_var.URL_FILEBROWSER_MEDIA }}js/fileuploader.js"></script>
     <script type="text/javascript">
+    
+    
     (function($){
         $(document).ready(function() {
             $("div#content .collapse").grp_collapsible({
@@ -34,6 +40,7 @@
     })(django.jQuery);
     (function($){
         $(document).ready(function() {
+            var uploaded_files = {};
             var uploader = new qq.FileUploader({
                 element: $('#file-uploader').get(0),
                 action: '{% url filebrowser:fb_do_upload %}',
@@ -83,16 +90,29 @@
                 onComplete: function(id, fileName, resp){
                     if (resp.success) {
                         this.getItem(id).fadeOut('slow');
+                        // request the currently uploaded image as "list-item"
+                        // to insert it underneath the upload form
                         $.ajax({
                           url: '{% url filebrowser:fb_get_list_item %}',
                           data: {
                             dir: '{{ query.dir|escapejs }}',
-                            filename: fileName,
+                            filename: resp.filename{% if query.pop == '1' %},
+                            pop: 1{% endif %}
                           },
                           dataType: 'json',
                           success: function(data) {
-                            $('#result_list').append(data.html);
-                            $('.result_list_container').first().show();
+                            var fileobject_identifier = $(data.html).find(".fileobject_identifier").first().attr('href');
+                            if (uploaded_files[fileobject_identifier]) {
+                              uploaded_files[fileobject_identifier] = data.html;
+                              $('#result_list').empty();
+                              for (var i in uploaded_files) {
+                                $('#result_list').append(uploaded_files[i]);
+                              }
+                            } else {
+                              uploaded_files[fileobject_identifier] = data.html;
+                              $('#result_list').append(data.html);
+                              $('.result_list_container').first().show();
+                            }
                           }
                         });
                     }
@@ -153,7 +173,10 @@
         <table cellspacing="0">
             <thead>
                 <tr>
-                    <th>&nbsp;</th>
+                    {% if query.pop == '1' %}
+                      <th>&nbsp;</th>
+                    {% endif %}
+                    <th>{% trans "Type" %}</th>
                     <th>{% trans "Thumbnail" %}</th>
                     <th>{% trans "Filename" %}</th>
                     <th>{% trans "Size" %}</th>

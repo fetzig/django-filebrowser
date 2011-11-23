@@ -523,7 +523,7 @@ class FileBrowserSite(object):
             return HttpResponse(json.dumps(ret_json))
     
     def _get_list_item(self, request):
-        query = request.GET
+        query = request.GET.copy()
         path = u'%s' % os.path.join(self.directory, query.get('dir', ''))
         fileobject = FileObject(os.path.join(path, query.get('filename', '')), site=self)
         

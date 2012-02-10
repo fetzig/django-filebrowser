@@ -17,6 +17,11 @@
       <script language="javascript" type="text/javascript" src="{{ settings_var.URL_FILEBROWSER_MEDIA }}js/FB_FileBrowseField.js"></script>
       {% include "filebrowser/include/init_version_pulldown.html" %}
     {% endifequal %}
+    {% ifequal query.pop '2' %} <!-- TinyMCE -->
+      <script language="javascript" type="text/javascript" src="{{ settings_var.URL_TINYMCE }}tiny_mce_popup.js"></script>
+      <script language="javascript" type="text/javascript" src="{{ settings_var.URL_FILEBROWSER_MEDIA }}js/FB_TinyMCE.js"></script>
+      {% include "filebrowser/include/init_version_pulldown.html" %}
+    {% endifequal %}
     <script type="text/javascript" src="../../jsi18n/"></script>
     <script type="text/javascript" src="{{ settings_var.URL_FILEBROWSER_MEDIA }}js/fileuploader.js"></script>
     <script type="text/javascript">
@@ -96,8 +101,8 @@
                           url: '{% url filebrowser:fb_get_list_item %}',
                           data: {
                             dir: '{{ query.dir|escapejs }}',
-                            filename: resp.filename{% if query.pop == '1' %},
-                            pop: 1{% endif %}
+                            filename: resp.filename{% if query.pop %},
+                            pop: {{ query.pop }}{% endif %}
                           },
                           dataType: 'json',
                           success: function(data) {
